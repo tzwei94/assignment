@@ -56,7 +56,7 @@ The API issues 15-minute RS256 tokens at `POST /auth/token` using Basic credenti
 
 The dev Terraform root creates private `${name}/banking-api` and `${name}/banking-alloy` repositories. Tags are immutable, storage uses AES256 encryption, and basic scanning runs on push. Trivy remains the publication gate. Only untagged images expire after seven days; retain tagged images needed by release and rollback manifests.
 
-The trusted application publisher assumes its GitHub OIDC build role and uses `aws ecr get-login-password` with Docker username `AWS`. Layer upload and push permissions are scoped to the application repository. Operator credentials publish Alloy. The deployment role has pull access and ECR metadata reads for Terraform refresh.
+The trusted application publisher assumes its GitHub OIDC build role and uses `aws ecr get-login-password` with Docker username `AWS`. Layer upload and push permissions are scoped to the application repository. The separate Publish Alloy workflow runs on a GitHub-hosted runner and assumes a dedicated role scoped to Alloy's repository and the deployment repository's main branch. Operator publication remains available. The deployment role has pull access and ECR metadata reads for Terraform refresh.
 
 Fargate pulls directly from ECR through its task execution role; task definitions carry no external registry credentials. Application tasks can pull API and Alloy images; migration/bootstrap execution roles can pull only the API image. Secret injection retains separate DB, telemetry and authentication permissions. Restart tasks after injected-secret changes. [AWS task execution role](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_execution_IAM_role.html).
 

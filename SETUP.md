@@ -370,6 +370,13 @@ gh variable set AWS_REGION --repo "$GH_OWNER/$APP_REPO" --body "$AWS_REGION"
 gh variable set AWS_BUILD_ROLE_ARN --repo "$GH_OWNER/$APP_REPO" \
   --body "$(jq -r .build_role_arn .private/setup/contract.json)"
 gh variable set IMAGE_REPOSITORY --repo "$GH_OWNER/$APP_REPO" --body "$IMAGE_REPOSITORY"
+gh variable set DEPLOYMENT_REPOSITORY --repo "$GH_OWNER/$APP_REPO" --body "$GH_OWNER/$DEPLOY_REPO"
+
+# Alloy publishing runs on hosted runners, without the dev environment.
+gh variable set AWS_REGION --repo "$GH_OWNER/$DEPLOY_REPO" --body "$AWS_REGION"
+gh variable set AWS_ALLOY_PUBLISH_ROLE_ARN --repo "$GH_OWNER/$DEPLOY_REPO" \
+  --body "$(jq -er .alloy_publish_role_arn .private/setup/contract.json)"
+gh variable set ALLOY_REPOSITORY --repo "$GH_OWNER/$DEPLOY_REPO" --body "$ALLOY_REPOSITORY"
 
 gh variable set AWS_REGION --repo "$GH_OWNER/$DEPLOY_REPO" --env dev --body "$AWS_REGION"
 gh variable set AWS_DEPLOY_ROLE_ARN --repo "$GH_OWNER/$DEPLOY_REPO" --env dev \
@@ -398,15 +405,22 @@ export SOURCE_SHA="$(jq -er .source_sha .private/setup/app-release/image-manifes
 
 Select a successful **main-push** run with publication, not a PR run. The manifest directory must be empty before downloading another run. The manifest is the authoritative pairing of source commit and immutable image digest.
 
-For Alloy, first review its validation record and commit the collector change in the existing deployment repository. Run its publication script from your workstation; it validates, scans and pushes only on success:
+For Alloy, use **Publish Alloy** in the deployment repository on `main`. It also runs automatically when the collector Dockerfile/configuration or its publishing script/workflow changes on `main`. The dedicated role and repository variables above must exist first; for an existing environment, apply the reviewed operator IAM change and refresh the contract before configuring the variables. The normal application deployment workflow cannot create the role.
 
 ```sh
-SOURCE_SHA="$(git -C deployment rev-parse HEAD)" \
-  deployment/deploy/scripts/publish-alloy.sh
-export ALLOY_IMAGE='REPLACE_WITH_THE_PRINTED_REPOSITORY@sha256:DIGEST'
+gh workflow run publish-alloy.yml --repo "$GH_OWNER/$DEPLOY_REPO" --ref main
+gh run list --repo "$GH_OWNER/$DEPLOY_REPO" --workflow publish-alloy.yml --branch main
+export ALLOY_RUN_ID=REPLACE_SELECTED_ALLOY_RUN_ID
+gh run watch "$ALLOY_RUN_ID" --repo "$GH_OWNER/$DEPLOY_REPO" --exit-status
+export ALLOY_RUN_ATTEMPT="$(gh run view "$ALLOY_RUN_ID" --repo "$GH_OWNER/$DEPLOY_REPO" --json attempt --jq .attempt)"
+gh run download "$ALLOY_RUN_ID" --repo "$GH_OWNER/$DEPLOY_REPO" \
+  --name "alloy-image-manifest-$ALLOY_RUN_ID-$ALLOY_RUN_ATTEMPT" --dir .private/setup/alloy-release
+export ALLOY_IMAGE="$(jq -er .alloy_image .private/setup/alloy-release/alloy-image-manifest.json)"
 ```
 
-The temporary `SOURCE_SHA=...` applies only to the Alloy command; the application `SOURCE_SHA` above stays intact. Do not bypass the scanner or substitute a mutable tag. The final printed digest must refer to the image that passed validation and scanning.
+Choose the successful run for the intended collector commit and use an empty download directory. You can also copy `alloy_image` directly from its run summary. The app publish/release summary shows the matching application `image` and `source_sha`, all deployment input names and a copyable dispatch command. Keep the application `SOURCE_SHA` above; the Alloy manifest's `alloy_source_sha` belongs to the deployment repository. Use `action=deploy`, and set `first_release=true` only for the initial deployment after the next database bootstrap step; later deployments use `false`. Do not bypass the scanner or substitute mutable tags.
+
+Operator publication remains available with `SOURCE_SHA="$(git -C deployment rev-parse HEAD)" deployment/deploy/scripts/publish-alloy.sh` and scoped ECR credentials; copy the final printed digest into `ALLOY_IMAGE`.
 
 When upgrading from the older initializer-based task definition, rebuild and publish **both** images: Java owns `/opt/app/certs/rds-ca.pem`, and Alloy uses the generic `/var/log/app` mount with environment-configured telemetry. Keep the prior task definitions and image digests available for rollback. Database certificate rotation subsequently requires only a Java-image rebuild.
 
