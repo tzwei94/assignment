@@ -1,0 +1,197 @@
+{
+  "description": "Filter application logs by operation, severity, task and literal message text. Expand a row for parsed fields including trace_id. Operation filters match text; accepted operations are logged, rejected requests and idempotent retries may not have an operation message.",
+  "editable": true,
+  "id": null,
+  "links": [
+    {
+      "keepTime": true,
+      "targetBlank": false,
+      "title": "API overview",
+      "type": "link",
+      "url": "/d/banking-api-overview"
+    },
+    {
+      "title": "Service Graph",
+      "type": "link",
+      "url": "/d/banking-api-service-graph",
+      "keepTime": true
+    }
+  ],
+  "panels": [
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "description": "Newest first, up to 1,000 matching logs. Search is case-sensitive literal text. Empty search shows all messages. Expand a row for severity, task and trace ID. Do not include backticks in the search text.",
+      "gridPos": {
+        "h": 24,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showLabels": false,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "editorMode": "code",
+          "expr": "{service_name=\"banking-api\",environment=~\"${environment:regex}\",instance=~\"${instance:regex}\"} | json | __error__=\"\" | level=~\"${level:regex}\" | message=~\"(?s).*${operation:regex}.*\" | line_format \"{{.message}}\" |= `${search:raw}`",
+          "maxLines": 1000,
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "title": "Messages",
+      "type": "logs"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": [
+    "banking",
+    "logs"
+  ],
+  "templating": {
+    "list": [
+      {
+        "allValue": null,
+        "current": {
+          "text": "banking-dev",
+          "value": "banking-dev"
+        },
+        "datasource": {
+          "type": "loki",
+          "uid": "loki"
+        },
+        "definition": "label_values({service_name=\"banking-api\"}, environment)",
+        "includeAll": false,
+        "label": "Environment",
+        "multi": false,
+        "name": "environment",
+        "options": [],
+        "query": "label_values({service_name=\"banking-api\"}, environment)",
+        "refresh": 1,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "allValue": ".*",
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        },
+        "includeAll": true,
+        "label": "Operation",
+        "multi": false,
+        "name": "operation",
+        "options": [
+          {
+            "selected": false,
+            "text": "deposit",
+            "value": "deposit"
+          },
+          {
+            "selected": false,
+            "text": "withdrawal",
+            "value": "withdrawal"
+          }
+        ],
+        "query": "deposit,withdrawal",
+        "type": "custom"
+      },
+      {
+        "allValue": ".*",
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        },
+        "includeAll": true,
+        "label": "Level",
+        "multi": false,
+        "name": "level",
+        "options": [
+          {
+            "selected": false,
+            "text": "INFO",
+            "value": "INFO"
+          },
+          {
+            "selected": false,
+            "text": "WARN",
+            "value": "WARN"
+          },
+          {
+            "selected": false,
+            "text": "ERROR",
+            "value": "ERROR"
+          },
+          {
+            "selected": false,
+            "text": "DEBUG",
+            "value": "DEBUG"
+          },
+          {
+            "selected": false,
+            "text": "TRACE",
+            "value": "TRACE"
+          }
+        ],
+        "query": "INFO,WARN,ERROR,DEBUG,TRACE",
+        "type": "custom"
+      },
+      {
+        "allValue": ".*",
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "loki",
+          "uid": "loki"
+        },
+        "definition": "label_values({service_name=\"banking-api\",environment=~\"$environment\"}, instance)",
+        "includeAll": true,
+        "label": "Task",
+        "multi": false,
+        "name": "instance",
+        "options": [],
+        "query": "label_values({service_name=\"banking-api\",environment=~\"$environment\"}, instance)",
+        "refresh": 1,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": {
+          "text": "",
+          "value": ""
+        },
+        "label": "Message contains",
+        "name": "search",
+        "options": [],
+        "query": "",
+        "type": "textbox"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timezone": "browser",
+  "title": "Banking API \u00b7 Log Search",
+  "uid": "banking-api-logs",
+  "version": 0
+}

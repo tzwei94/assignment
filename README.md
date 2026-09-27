@@ -10,6 +10,7 @@ A Java banking demo with three authenticated operations: check a balance, deposi
 | Try requests in Postman | [Importable collection and environment](app/postman/README.md) — Basic login, health, balances, deposits, withdrawals and retry checks |
 | Create AWS infrastructure and deploy | **[AWS setup guide](SETUP.md)** — preparation, Terraform, secrets, CI/CD, first deployment and teardown, in order |
 | Understand the design | **[Architecture](docs/architecture.md)** — networking, security, CI/CD, monitoring and design choices |
+| View application metrics, logs and service graph | [Observability guide and Grafana login](docs/observability/README.md) |
 | Check costs and account restrictions | [AWS compatibility and budget](docs/budget.md) |
 | Prepare the existing repositories for public access | [Public sharing checklist](docs/public-sharing.md) |
 
