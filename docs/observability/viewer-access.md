@@ -1,6 +1,6 @@
 # Grafana viewer access
 
-The `banking-viewer` account has read-only access to the three prepared Banking API dashboards in **Banking API Review** (organization ID `2`). It is not a member of **Main Org.** and is not a Grafana server administrator.
+The `banking-viewer` account has read-only access to the four prepared Banking API dashboards in **Banking API Review** (organization ID `2`). It is not a member of **Main Org.** and is not a Grafana server administrator.
 
 ## Sign in
 
@@ -14,14 +14,17 @@ The `banking-viewer` account has read-only access to the three prepared Banking 
 | Banking API · Overview | [Open overview](https://grafana.tzwei.me/d/banking-api-overview?orgId=2) | [JSON](banking-api-dashboard.json) |
 | Banking API · Log Search | [Open log search](https://grafana.tzwei.me/d/banking-api-logs?orgId=2) | [JSON](banking-api-logs.json) |
 | Banking API · Service Graph | [Open service graph](https://grafana.tzwei.me/d/banking-api-service-graph?orgId=2) | [JSON](banking-api-service-graph.json) |
+| Banking API · ECS Infrastructure | [Open ECS infrastructure](https://grafana.tzwei.me/d/banking-ecs-infrastructure?orgId=2) | [JSON](banking-ecs-infrastructure.json) |
 
 The overview is the organization home dashboard. The viewer can change time ranges and filters, inspect panels, and read results. It cannot save, edit, delete, or administer dashboards, create folders, manage users, or switch into Main Org. Kubernetes, node, CoreDNS, Grafana, and Prometheus infrastructure dashboards remain in Main Org.
 
 ## Access configuration
 
-The account has the `Viewer` organization role. Each approved dashboard also grants user ID `2` explicit **View** permission (`permission: 1`); the organization Admin role has **Admin** permission (`permission: 4`). No Edit or Admin permission is assigned to the viewer. The separate organization contains only these dashboard copies, with Prometheus, Loki, and Tempo data sources using the same UIDs as the source dashboards.
+The account has the `Viewer` organization role. Each approved dashboard also grants user ID `2` explicit **View** permission (`permission: 1`); the organization Admin role has **Admin** permission (`permission: 4`). No Edit or Admin permission is assigned to the viewer. The separate organization contains only these dashboard copies, with Prometheus, Loki, Tempo, and CloudWatch data sources using the same UIDs as the source dashboards.
 
 This is dashboard isolation, not telemetry-data isolation: Grafana OSS viewers can query data sources available in their organization, including data beyond a dashboard's filters. The shared telemetry backends are not tenant-filtered for this account. See [Grafana roles and permissions](https://grafana.com/docs/grafana/latest/administration/roles-and-permissions/).
+
+The CloudWatch connection permits metric listing and reads in `ap-southeast-1` across the AWS account. Its dashboard filters do not restrict which regional metrics a viewer can query. It grants no CloudWatch Logs access or AWS write permissions. See [connection details](ecs-infrastructure.md).
 
 ## Maintaining access
 
@@ -29,11 +32,13 @@ These are live Grafana database settings, not Terraform or Helm-managed user pro
 
 When updating dashboards, sign in as an administrator, select **Banking API Review**, and import the matching JSON above with its existing UID and overwrite enabled. Apply the same update to Main Org. if both copies should match. Changes to one organization do not automatically update the other. Keep the explicit per-dashboard View grant, and verify the resulting view as `banking-viewer`. Do not import unrelated dashboards or add this user to Main Org.
 
-The data source UIDs are `prometheus`, `loki`, and `tempo`. Keep their settings aligned with the source organization when changing service graph or trace integrations. Keep backend and administrator credentials out of dashboard exports.
+The data source UIDs are `prometheus`, `loki`, `tempo`, and `banking-cloudwatch`. Keep their settings aligned with the source organization when changing integrations. Keep backend and administrator credentials out of dashboard exports.
 
 To rotate access, use Grafana server administration to change this user's password, update the private credential record and privately notify authorized viewers, and revoke existing sessions if necessary. To revoke access entirely, disable the user in server administration.
 
 ## Verification
+
+The ECS infrastructure addition was verified live on 2026-09-27: both organization copies were saved, the viewer listed all four approved dashboards, and the new dashboard returned `canEdit`, `canSave`, and `canAdmin` as false. All 17 CloudWatch queries succeeded as the viewer. CPU, memory, target health, requests, response time, and 4xx series returned samples; neither 5xx series returned samples in the six-hour verification window. These absent event series were not converted to zero. The older checks below remain a historical record.
 
 The following is the previously recorded verification from 2026-09-27 against Grafana 13.2.2 with the live `banking-viewer` account. It was not rerun during the documentation audit; recheck after user, organization, dashboard or backend changes:
 

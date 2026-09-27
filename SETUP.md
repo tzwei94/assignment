@@ -405,7 +405,7 @@ export SOURCE_SHA="$(jq -er .source_sha .private/setup/app-release/image-manifes
 
 Select a successful **main-push** run with publication, not a PR run. The manifest directory must be empty before downloading another run. The manifest is the authoritative pairing of source commit and immutable image digest.
 
-For Alloy, use **Publish Alloy** in the deployment repository on `main`. It also runs automatically when the collector Dockerfile/configuration or its publishing script/workflow changes on `main`. The dedicated role and repository variables above must exist first; for an existing environment, apply the reviewed operator IAM change and refresh the contract before configuring the variables. The normal application deployment workflow cannot create the role.
+For Alloy, use **Publish Alloy** in the deployment repository on `main`. Leave `alloy_image` blank in the deployment form to read the latest successful publish manifest at run time, or enter a digest to select a specific version. Missing or expired manifests stop deployment until you publish again or supply a digest. Publication is manual-only; collector and publishing workflow changes on `main` do not trigger it. The dedicated role and repository variables above must exist first; for an existing environment, apply the reviewed operator IAM change and refresh the contract before configuring the variables. The normal application deployment workflow cannot create the role.
 
 ```sh
 gh workflow run publish-alloy.yml --repo "$GH_OWNER/$DEPLOY_REPO" --ref main

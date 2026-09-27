@@ -22,6 +22,12 @@
       "type": "link",
       "url": "/d/banking-api-service-graph",
       "keepTime": true
+    },
+    {
+      "title": "ECS Infrastructure",
+      "type": "link",
+      "url": "/d/banking-ecs-infrastructure",
+      "keepTime": true
     }
   ],
   "panels": [

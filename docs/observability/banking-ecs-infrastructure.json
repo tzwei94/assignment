@@ -1,0 +1,1115 @@
+{
+  "id": null,
+  "uid": "banking-ecs-infrastructure",
+  "title": "Banking API \u00b7 ECS Infrastructure",
+  "description": "ECS Fargate service capacity and ALB health, traffic, latency and errors using native AWS CloudWatch metrics.",
+  "tags": [
+    "banking",
+    "ecs",
+    "aws",
+    "infrastructure"
+  ],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 0,
+  "editable": true,
+  "graphTooltip": 1,
+  "refresh": "5m",
+  "time": {
+    "from": "now-6h",
+    "to": "now-2m"
+  },
+  "timepicker": {
+    "refresh_intervals": [
+      "1m",
+      "5m",
+      "15m",
+      "30m",
+      "1h"
+    ]
+  },
+  "templating": {
+    "list": []
+  },
+  "annotations": {
+    "list": []
+  },
+  "links": [
+    {
+      "title": "API Overview",
+      "type": "link",
+      "url": "/d/banking-api-overview",
+      "keepTime": true
+    },
+    {
+      "title": "Application Logs",
+      "type": "link",
+      "url": "/d/banking-api-logs",
+      "keepTime": true
+    },
+    {
+      "title": "Service Graph",
+      "type": "link",
+      "url": "/d/banking-api-service-graph",
+      "keepTime": true
+    }
+  ],
+  "panels": [
+    {
+      "id": 1,
+      "title": "ECS Fargate infrastructure \u00b7 Singapore",
+      "type": "text",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 5
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "**banking-dev** \u00b7 ECS Fargate service and its Application Load Balancer \u00b7 CloudWatch, 60-second buckets.\n\nCPU and memory are service utilization percentages of allocated task resources, including the sidecar. Healthy targets measure ALB readiness, not ECS desired/running task counts. Latest values can lag by a few minutes. Sparse request/error metrics may show **No data** when AWS publishes no samples; gaps are not filled with zero. Container Insights is disabled; per-task network/storage metrics are not collected."
+      }
+    },
+    {
+      "id": 2,
+      "title": "ECS CPU utilization",
+      "description": "Latest reported one-minute service average. 80% matches the ECS CPU alarm threshold.",
+      "type": "stat",
+      "datasource": {
+        "type": "cloudwatch",
+        "uid": "banking-cloudwatch"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 5,
+        "w": 6,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 1,
+          "color": {
+            "mode": "thresholds"
+          },
+          "noValue": "No data",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 70
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "min": 0,
+          "max": 100
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "cloudwatch",
+            "uid": "banking-cloudwatch"
+          },
+          "queryMode": "Metrics",
+          "metricQueryType": 0,
+          "metricEditorMode": 0,
+          "region": "ap-southeast-1",
+          "namespace": "AWS/ECS",
+          "metricName": "CPUUtilization",
+          "dimensions": {
+            "ClusterName": [
+              "banking-dev"
+            ],
+            "ServiceName": [
+              "banking-dev"
+            ]
+          },
+          "statistic": "Average",
+          "period": "60",
+          "matchExact": true,
+          "expression": "",
+          "label": "CPUUtilization"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "ECS memory utilization",
+      "description": "Latest reported one-minute service average. 80% matches the ECS memory alarm threshold.",
+      "type": "stat",
+      "datasource": {
+        "type": "cloudwatch",
+        "uid": "banking-cloudwatch"
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 5,
+        "w": 6,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 1,
+          "color": {
+            "mode": "thresholds"
+          },
+          "noValue": "No data",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 70
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "min": 0,
+          "max": 100
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "cloudwatch",
+            "uid": "banking-cloudwatch"
+          },
+          "queryMode": "Metrics",
+          "metricQueryType": 0,
+          "metricEditorMode": 0,
+          "region": "ap-southeast-1",
+          "namespace": "AWS/ECS",
+          "metricName": "MemoryUtilization",
+          "dimensions": {
+            "ClusterName": [
+              "banking-dev"
+            ],
+            "ServiceName": [
+              "banking-dev"
+            ]
+          },
+          "statistic": "Average",
+          "period": "60",
+          "matchExact": true,
+          "expression": "",
+          "label": "MemoryUtilization"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Healthy ALB targets",
+      "description": "Latest reported one-minute minimum healthy target count. Current deployment expects two healthy targets; this is not an ECS running task count.",
+      "type": "stat",
+      "datasource": {
+        "type": "cloudwatch",
+        "uid": "banking-cloudwatch"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 5,
+        "w": 6,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "color": {
+            "mode": "thresholds"
+          },
+          "noValue": "No data",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "green",
+                "value": 2
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "cloudwatch",
+            "uid": "banking-cloudwatch"
+          },
+          "queryMode": "Metrics",
+          "metricQueryType": 0,
+          "metricEditorMode": 0,
+          "region": "ap-southeast-1",
+          "namespace": "AWS/ApplicationELB",
+          "metricName": "HealthyHostCount",
+          "dimensions": {
+            "LoadBalancer": [
+              "app/banking-dev/e2b71a1e220f9f80"
+            ],
+            "TargetGroup": [
+              "targetgroup/banking-dev/b0a4aade35d6ab29"
+            ]
+          },
+          "statistic": "Minimum",
+          "period": "60",
+          "matchExact": true,
+          "expression": "",
+          "label": "HealthyHostCount"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Unhealthy ALB targets",
+      "description": "Latest reported one-minute maximum unhealthy target count.",
+      "type": "stat",
+      "datasource": {
+        "type": "cloudwatch",
+        "uid": "banking-cloudwatch"
+      },
+      "gridPos": {
+        "x": 18,
+        "y": 5,
+        "w": 6,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "color": {
+            "mode": "thresholds"
+          },
+          "noValue": "No data",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "cloudwatch",
+            "uid": "banking-cloudwatch"
+          },
+          "queryMode": "Metrics",
+          "metricQueryType": 0,
+          "metricEditorMode": 0,
+          "region": "ap-southeast-1",
+          "namespace": "AWS/ApplicationELB",
+          "metricName": "UnHealthyHostCount",
+          "dimensions": {
+            "LoadBalancer": [
+              "app/banking-dev/e2b71a1e220f9f80"
+            ],
+            "TargetGroup": [
+              "targetgroup/banking-dev/b0a4aade35d6ab29"
+            ]
+          },
+          "statistic": "Maximum",
+          "period": "60",
+          "matchExact": true,
+          "expression": "",
+          "label": "UnHealthyHostCount"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "CPU utilization over time",
+      "description": "ECS service CPU usage relative to its allocated CPU. Average and maximum CloudWatch statistics per minute.",
+      "type": "timeseries",
+      "datasource": {
+        "type": "cloudwatch",
+        "uid": "banking-cloudwatch"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 9,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 1,
+          "color": {
+            "mode": "palette-classic"
+          },
+          "noValue": "No data",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 70
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "min": 0,
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "showPoints": "auto",
+            "spanNulls": false,
+            "axisCenteredZero": false,
+            "thresholdsStyle": {
+              "mode": "dashed"
+            },
+            "axisSoftMax": 100
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "cloudwatch",
+            "uid": "banking-cloudwatch"
+          },
+          "queryMode": "Metrics",
+          "metricQueryType": 0,
+          "metricEditorMode": 0,
+          "region": "ap-southeast-1",
+          "namespace": "AWS/ECS",
+          "metricName": "CPUUtilization",
+          "dimensions": {
+            "ClusterName": [
+              "banking-dev"
+            ],
+            "ServiceName": [
+              "banking-dev"
+            ]
+          },
+          "statistic": "Average",
+          "period": "60",
+          "matchExact": true,
+          "expression": "",
+          "label": "Average"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "cloudwatch",
+            "uid": "banking-cloudwatch"
+          },
+          "queryMode": "Metrics",
+          "metricQueryType": 0,
+          "metricEditorMode": 0,
+          "region": "ap-southeast-1",
+          "namespace": "AWS/ECS",
+          "metricName": "CPUUtilization",
+          "dimensions": {
+            "ClusterName": [
+              "banking-dev"
+            ],
+            "ServiceName": [
+              "banking-dev"
+            ]
+          },
+          "statistic": "Maximum",
+          "period": "60",
+          "matchExact": true,
+          "expression": "",
+          "label": "Maximum"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Memory utilization over time",
+      "description": "ECS service memory usage relative to its allocated memory. Includes app and Alloy containers.",
+      "type": "timeseries",
+      "datasource": {
+        "type": "cloudwatch",
+        "uid": "banking-cloudwatch"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 9,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 1,
+          "color": {
+            "mode": "palette-classic"
+          },
+          "noValue": "No data",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 70
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "min": 0,
+          "max": 100,
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "showPoints": "auto",
+            "spanNulls": false,
+            "axisCenteredZero": false,
+            "thresholdsStyle": {
+              "mode": "dashed"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "cloudwatch",
+            "uid": "banking-cloudwatch"
+          },
+          "queryMode": "Metrics",
+          "metricQueryType": 0,
+          "metricEditorMode": 0,
+          "region": "ap-southeast-1",
+          "namespace": "AWS/ECS",
+          "metricName": "MemoryUtilization",
+          "dimensions": {
+            "ClusterName": [
+              "banking-dev"
+            ],
+            "ServiceName": [
+              "banking-dev"
+            ]
+          },
+          "statistic": "Average",
+          "period": "60",
+          "matchExact": true,
+          "expression": "",
+          "label": "Average"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "cloudwatch",
+            "uid": "banking-cloudwatch"
+          },
+          "queryMode": "Metrics",
+          "metricQueryType": 0,
+          "metricEditorMode": 0,
+          "region": "ap-southeast-1",
+          "namespace": "AWS/ECS",
+          "metricName": "MemoryUtilization",
+          "dimensions": {
+            "ClusterName": [
+              "banking-dev"
+            ],
+            "ServiceName": [
+              "banking-dev"
+            ]
+          },
+          "statistic": "Maximum",
+          "period": "60",
+          "matchExact": true,
+          "expression": "",
+          "label": "Maximum"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "Target health over time",
+      "description": "Target group health across the load balancer. Minimum healthy and maximum unhealthy counts per minute.",
+      "type": "timeseries",
+      "datasource": {
+        "type": "cloudwatch",
+        "uid": "banking-cloudwatch"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 17,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "color": {
+            "mode": "palette-classic"
+          },
+          "noValue": "No data",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "showPoints": "auto",
+            "spanNulls": false,
+            "axisCenteredZero": false,
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "cloudwatch",
+            "uid": "banking-cloudwatch"
+          },
+          "queryMode": "Metrics",
+          "metricQueryType": 0,
+          "metricEditorMode": 0,
+          "region": "ap-southeast-1",
+          "namespace": "AWS/ApplicationELB",
+          "metricName": "HealthyHostCount",
+          "dimensions": {
+            "LoadBalancer": [
+              "app/banking-dev/e2b71a1e220f9f80"
+            ],
+            "TargetGroup": [
+              "targetgroup/banking-dev/b0a4aade35d6ab29"
+            ]
+          },
+          "statistic": "Minimum",
+          "period": "60",
+          "matchExact": true,
+          "expression": "",
+          "label": "Healthy (minimum)"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "cloudwatch",
+            "uid": "banking-cloudwatch"
+          },
+          "queryMode": "Metrics",
+          "metricQueryType": 0,
+          "metricEditorMode": 0,
+          "region": "ap-southeast-1",
+          "namespace": "AWS/ApplicationELB",
+          "metricName": "UnHealthyHostCount",
+          "dimensions": {
+            "LoadBalancer": [
+              "app/banking-dev/e2b71a1e220f9f80"
+            ],
+            "TargetGroup": [
+              "targetgroup/banking-dev/b0a4aade35d6ab29"
+            ]
+          },
+          "statistic": "Maximum",
+          "period": "60",
+          "matchExact": true,
+          "expression": "",
+          "label": "Unhealthy (maximum)"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "title": "Requests per minute",
+      "description": "ALB RequestCount Sum in fixed 60-second buckets. Includes requests forwarded to a target; excludes health checks. Missing buckets remain gaps.",
+      "type": "timeseries",
+      "datasource": {
+        "type": "cloudwatch",
+        "uid": "banking-cloudwatch"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 17,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "color": {
+            "mode": "palette-classic"
+          },
+          "noValue": "No data",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "showPoints": "auto",
+            "spanNulls": false,
+            "axisCenteredZero": false,
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "cloudwatch",
+            "uid": "banking-cloudwatch"
+          },
+          "queryMode": "Metrics",
+          "metricQueryType": 0,
+          "metricEditorMode": 0,
+          "region": "ap-southeast-1",
+          "namespace": "AWS/ApplicationELB",
+          "metricName": "RequestCount",
+          "dimensions": {
+            "LoadBalancer": [
+              "app/banking-dev/e2b71a1e220f9f80"
+            ]
+          },
+          "statistic": "Sum",
+          "period": "60",
+          "matchExact": true,
+          "expression": "",
+          "label": "Forwarded requests"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "title": "Target response time",
+      "description": "Time from ALB sending the request to the target until the target starts sending response headers. One-minute average and p95; sparse without traffic.",
+      "type": "timeseries",
+      "datasource": {
+        "type": "cloudwatch",
+        "uid": "banking-cloudwatch"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 25,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "decimals": 1,
+          "color": {
+            "mode": "palette-classic"
+          },
+          "noValue": "No data",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "showPoints": "auto",
+            "spanNulls": false,
+            "axisCenteredZero": false,
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "cloudwatch",
+            "uid": "banking-cloudwatch"
+          },
+          "queryMode": "Metrics",
+          "metricQueryType": 0,
+          "metricEditorMode": 0,
+          "region": "ap-southeast-1",
+          "namespace": "AWS/ApplicationELB",
+          "metricName": "TargetResponseTime",
+          "dimensions": {
+            "LoadBalancer": [
+              "app/banking-dev/e2b71a1e220f9f80"
+            ],
+            "TargetGroup": [
+              "targetgroup/banking-dev/b0a4aade35d6ab29"
+            ]
+          },
+          "statistic": "Average",
+          "period": "60",
+          "matchExact": true,
+          "expression": "",
+          "label": "Mean"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "cloudwatch",
+            "uid": "banking-cloudwatch"
+          },
+          "queryMode": "Metrics",
+          "metricQueryType": 0,
+          "metricEditorMode": 0,
+          "region": "ap-southeast-1",
+          "namespace": "AWS/ApplicationELB",
+          "metricName": "TargetResponseTime",
+          "dimensions": {
+            "LoadBalancer": [
+              "app/banking-dev/e2b71a1e220f9f80"
+            ],
+            "TargetGroup": [
+              "targetgroup/banking-dev/b0a4aade35d6ab29"
+            ]
+          },
+          "statistic": "p95",
+          "period": "60",
+          "matchExact": true,
+          "expression": "",
+          "label": "p95"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "title": "HTTP errors per minute",
+      "description": "Sum in fixed 60-second buckets. Target errors and ALB-generated errors are separate. AWS publishes some error series only when nonzero; absent series do not prove telemetry failure or zero errors.",
+      "type": "timeseries",
+      "datasource": {
+        "type": "cloudwatch",
+        "uid": "banking-cloudwatch"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 25,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "color": {
+            "mode": "palette-classic"
+          },
+          "noValue": "No data",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "showPoints": "auto",
+            "spanNulls": false,
+            "axisCenteredZero": false,
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "cloudwatch",
+            "uid": "banking-cloudwatch"
+          },
+          "queryMode": "Metrics",
+          "metricQueryType": 0,
+          "metricEditorMode": 0,
+          "region": "ap-southeast-1",
+          "namespace": "AWS/ApplicationELB",
+          "metricName": "HTTPCode_Target_4XX_Count",
+          "dimensions": {
+            "LoadBalancer": [
+              "app/banking-dev/e2b71a1e220f9f80"
+            ],
+            "TargetGroup": [
+              "targetgroup/banking-dev/b0a4aade35d6ab29"
+            ]
+          },
+          "statistic": "Sum",
+          "period": "60",
+          "matchExact": true,
+          "expression": "",
+          "label": "Target 4xx"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "cloudwatch",
+            "uid": "banking-cloudwatch"
+          },
+          "queryMode": "Metrics",
+          "metricQueryType": 0,
+          "metricEditorMode": 0,
+          "region": "ap-southeast-1",
+          "namespace": "AWS/ApplicationELB",
+          "metricName": "HTTPCode_Target_5XX_Count",
+          "dimensions": {
+            "LoadBalancer": [
+              "app/banking-dev/e2b71a1e220f9f80"
+            ],
+            "TargetGroup": [
+              "targetgroup/banking-dev/b0a4aade35d6ab29"
+            ]
+          },
+          "statistic": "Sum",
+          "period": "60",
+          "matchExact": true,
+          "expression": "",
+          "label": "Target 5xx"
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "type": "cloudwatch",
+            "uid": "banking-cloudwatch"
+          },
+          "queryMode": "Metrics",
+          "metricQueryType": 0,
+          "metricEditorMode": 0,
+          "region": "ap-southeast-1",
+          "namespace": "AWS/ApplicationELB",
+          "metricName": "HTTPCode_ELB_4XX_Count",
+          "dimensions": {
+            "LoadBalancer": [
+              "app/banking-dev/e2b71a1e220f9f80"
+            ]
+          },
+          "statistic": "Sum",
+          "period": "60",
+          "matchExact": true,
+          "expression": "",
+          "label": "ALB 4xx"
+        },
+        {
+          "refId": "D",
+          "datasource": {
+            "type": "cloudwatch",
+            "uid": "banking-cloudwatch"
+          },
+          "queryMode": "Metrics",
+          "metricQueryType": 0,
+          "metricEditorMode": 0,
+          "region": "ap-southeast-1",
+          "namespace": "AWS/ApplicationELB",
+          "metricName": "HTTPCode_ELB_5XX_Count",
+          "dimensions": {
+            "LoadBalancer": [
+              "app/banking-dev/e2b71a1e220f9f80"
+            ]
+          },
+          "statistic": "Sum",
+          "period": "60",
+          "matchExact": true,
+          "expression": "",
+          "label": "ALB 5xx"
+        }
+      ]
+    }
+  ]
+}
