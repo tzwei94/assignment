@@ -2,6 +2,8 @@
 
 ## Overview
 
+Users access the API through its Cloudflare-managed hostname. Cloudflare serves a **DNS-only CNAME** pointing to the ALB DNS name; after DNS resolution, the client connects directly to the ALB over HTTPS. Cloudflare does not proxy API traffic or terminate its TLS. The monitoring Cloudflare Tunnel is a separate integration.
+
 AWS hosts the API, RDS, EC2 runner and private ECR repositories. Grafana/Prometheus/Loki/Tempo and homelab Alloy belong to the monitoring platform, with authenticated Cloudflare endpoints consumed by AWS clients and authorized users. AWS deployment owns the separate Fargate and runner Alloy configurations.
 
 **Scope:** This document describes the checked-in implementation. Live health, credentials and AWS resource state must be verified separately using the [verification guide](verification.md). Operators supply and validate ECR images and external telemetry, DNS and TLS services. Use synthetic data and review the [AWS account compatibility and budget](budget.md) before applying Terraform.
@@ -13,6 +15,7 @@ AWS hosts the API, RDS, EC2 runner and private ECR repositories. Grafana/Prometh
 | Component | Configured placement | Purpose and decision |
 |---|---|---|
 | GitHub | External hosted service | Separate repositories: `app` for Java/build/publish and `deployment` for Terraform/deployment. Example Terraform profiles use placeholder repository names; override them to match the actual repositories. |
+| Cloudflare DNS | External authoritative DNS, operator-managed | DNS-only API CNAME points to the ALB DNS name; proxy disabled (grey cloud). |
 | Application Load Balancer | Public subnet in each of two AZs | HTTPS entry point with ACM certificate; port 80 redirects to HTTPS if enabled. Target type `ip`. |
 | Banking API | Private application subnets, two AZs | Two Java Fargate tasks with AZ spreading, no public IPs; one Alloy sidecar per task for logs, metrics and traces. Start at 0.5 vCPU / 1 GiB each, including the JVM and Alloy in the resource budget. |
 | RDS PostgreSQL | Isolated DB subnet group spanning two AZs | Budget-first single-AZ `db.t4g.micro`, private endpoint, encrypted storage and backups. Multi-AZ primary/standby is a separately costed upgrade. |
@@ -20,7 +23,7 @@ AWS hosts the API, RDS, EC2 runner and private ECR repositories. Grafana/Prometh
 | Amazon ECR | AWS regional service | Terraform-managed API and Alloy repositories; immutable tags, encrypted storage and IAM-authenticated push/pull. |
 | NAT gateway | One public subnet for budget-first demo | Outbound GitHub, package, certificate and AWS API access; shared by both AZs. Two NAT gateways are an upgrade, not this baseline. |
 | Observability | External monitoring platform | Supplies authenticated Prometheus/Loki/Tempo ingestion and protected Grafana access. AWS owns its collectors and integration checks. |
-| Cloudflare | Public edge and an operator-managed connector | Endpoint, tunnel and access-policy ownership belongs to the monitoring platform. AWS clients use the verified service contract. |
+| Cloudflare Tunnel (monitoring) | Public edge and an operator-managed connector | Endpoint, tunnel and access-policy ownership belongs to the monitoring platform. AWS clients use the verified service contract. |
 | Secrets Manager / KMS | Regional AWS services | Separate database, telemetry and authentication secrets; scoped access and encryption. ECR uses IAM. |
 | S3 | Regional AWS service | Separate restricted buckets for Terraform state/release manifests and ALB access logs. RDS uses automated backups and final snapshots; backup-export storage is not provisioned. No public access. |
 | CloudWatch / SNS | Regional AWS services | AWS metrics/alarms and confirmed notifications; seven-day task console logs. Application console logging is WARN and above; it is not a complete backup of the INFO-level file logs sent to Loki. |
@@ -33,7 +36,7 @@ Fargate uses `awsvpc`, so ALB targets must be `ip`. [AWS load balancer configura
 
 | Source | Destination | Allowed connection |
 |---|---|---|
-| API clients | ALB SG | TCP 443; optional TCP 80 redirect |
+| API clients (after resolving the Cloudflare-managed API hostname) | ALB SG | Direct TCP 443; optional TCP 80 redirect |
 | ALB SG | API task SG | TCP 8080, HTTP target traffic and health checks |
 | API task SG | Banking RDS SG | TCP 5432 with certificate-verified PostgreSQL TLS |
 | Fargate / EC2 runner | Regional ECR API, Docker registry and image layers | HTTPS through the existing NAT; execution-role pull and OIDC build-role push permissions. |
@@ -46,7 +49,7 @@ Fargate uses `awsvpc`, so ALB targets must be `ip`. [AWS load balancer configura
 
 Use SG-to-SG rules within AWS. Deny direct runner access to banking RDS; use isolated ECS migration tasks. The external-service contract requires private database/raw monitoring administration and authenticated published endpoints. Cluster administration and network controls belong to the monitoring operator; the AWS runner receives no cluster-admin/Proxmox credentials.
 
-Client → ALB uses a publicly trusted certificate. ALB → task uses HTTP on port 8080 within private application subnets, restricted by security groups to traffic from the ALB. This hop is not encrypted. PostgreSQL clients use `sslmode=verify-full`, the current RDS CA bundle and enforced TLS. [ALB target groups](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-target-groups.html), [RDS PostgreSQL TLS](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/PostgreSQL.Concepts.General.SSL.html).
+Client → ALB uses a publicly trusted ACM certificate for the API hostname. DNS-only records do not restrict ALB ingress to Cloudflare IPs; the client is the HTTPS source. ALB → task uses HTTP on port 8080 within private application subnets, restricted by security groups to traffic from the ALB. This hop is not encrypted. PostgreSQL clients use `sslmode=verify-full`, the current RDS CA bundle and enforced TLS. [ALB target groups](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-target-groups.html), [RDS PostgreSQL TLS](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/PostgreSQL.Concepts.General.SSL.html).
 
 For the demonstration, use pre-provisioned test identities with JWT validation and per-account authorization; use the implemented RSA signing-key-derived public-key, issuer and audience validation. The issuer/test-token setup must be documented and must never permit a caller to choose an arbitrary account without authorization. Identity-provider expansion is outside the core demo.
 
@@ -112,7 +115,7 @@ Follow [the AWS budget](budget.md), stop the runner outside build windows and re
 
 | Evaluation area | Evidence to retain for each deployment |
 |---|---|
-| Infrastructure and application correctness | ALB URL, healthy tasks, persisted balance/deposit/withdrawal tests, concurrent-withdrawal test |
+| Infrastructure and application correctness | Cloudflare-managed API HTTPS URL, healthy tasks, persisted balance/deposit/withdrawal tests, concurrent-withdrawal test |
 | IaC and pipeline quality | Repeatable Terraform plans, successful trusted workflow, immutable image digest and rollback |
 | Security | SG/IAM review, TLS checks, secrets handling, unauthorized-account denial |
 | Monitoring, logging and tracing | Dashboard, redacted logs, a Java trace retrieved in Grafana, exercised alarm and notification |

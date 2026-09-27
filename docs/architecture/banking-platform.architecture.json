@@ -2,7 +2,7 @@
   "schema_version": 1,
   "diagram_type": "architecture",
   "meta": {
-    "title": "Banking \u00b7 AWS + Tools",
+    "title": "Banking · AWS + Tools",
     "locale": "en",
     "quality_profile": "showcase",
     "viewBox": [
@@ -14,7 +14,7 @@
     {
       "id": "github",
       "type": "external",
-      "label": "GitHub \u00b7 2 repositories",
+      "label": "GitHub · 2 repositories",
       "sublabel": "app / deployment · hosted builds",
       "pos": [
         30,
@@ -28,8 +28,8 @@
     {
       "id": "runner",
       "type": "backend",
-      "label": "GitHub Runner \u00b7 EC2",
-      "sublabel": "Image publish \u00b7 Terraform",
+      "label": "GitHub Runner · EC2",
+      "sublabel": "Image publish · Terraform",
       "tag": "Start only for trusted jobs",
       "pos": [
         365,
@@ -45,7 +45,7 @@
       "type": "backend",
       "label": "Amazon ECR",
       "sublabel": "Private API + Alloy repositories",
-      "tag": "Immutable tags \u00b7 IAM authentication",
+      "tag": "Immutable tags · IAM authentication",
       "pos": [
         730,
         100
@@ -59,7 +59,7 @@
       "id": "users",
       "type": "external",
       "label": "API Clients",
-      "sublabel": "Authenticated banking requests",
+      "sublabel": "Use the API hostname",
       "pos": [
         30,
         330
@@ -73,7 +73,7 @@
       "id": "alb",
       "type": "cloud",
       "label": "Application Load Balancer",
-      "sublabel": "Public subnets \u00b7 two AZs",
+      "sublabel": "Public subnets · two AZs",
       "tag": "ACM certificate",
       "pos": [
         365,
@@ -87,9 +87,9 @@
     {
       "id": "fargate",
       "type": "backend",
-      "label": "ECS Fargate \u00b7 Java + Alloy",
-      "sublabel": "2 tasks \u00b7 2 AZs \u00b7 Alloy per task",
-      "tag": "Logback \u00b7 Actuator \u00b7 OpenTelemetry",
+      "label": "ECS Fargate · Java + Alloy",
+      "sublabel": "2 tasks · 2 AZs · Alloy per task",
+      "tag": "Logback · Actuator · OpenTelemetry",
       "pos": [
         730,
         330
@@ -103,8 +103,8 @@
       "id": "rds",
       "type": "database",
       "label": "RDS PostgreSQL",
-      "sublabel": "Isolated DB subnets \u00b7 Single-AZ",
-      "tag": "Encrypted \u00b7 backups",
+      "sublabel": "Isolated DB subnets · Single-AZ",
+      "tag": "Encrypted · backups",
       "pos": [
         1100,
         330
@@ -118,7 +118,7 @@
       "id": "secrets",
       "type": "security",
       "label": "Secrets Manager",
-      "sublabel": "DB \u00b7 telemetry \u00b7 auth credentials",
+      "sublabel": "DB · telemetry · auth credentials",
       "pos": [
         1100,
         100
@@ -132,7 +132,7 @@
       "id": "monitoring",
       "type": "backend",
       "label": "Grafana observability",
-      "sublabel": "Prometheus \u00b7 Loki \u00b7 Tempo",
+      "sublabel": "Prometheus · Loki · Tempo",
       "pos": [
         1100,
         720
@@ -141,17 +141,32 @@
         220,
         80
       ],
-      "tag": "Argo CD \u00b7 pinned Helm charts"
+      "tag": "Argo CD · pinned Helm charts"
     },
     {
       "id": "cloudflare",
       "type": "cloud",
       "label": "Cloudflare Tunnel",
-      "sublabel": "HTTPS contract \u00b7 authenticated",
+      "sublabel": "HTTPS contract · authenticated",
       "tag": "Tools owns tunnel + API gateway",
       "pos": [
         365,
         560
+      ],
+      "size": [
+        220,
+        80
+      ]
+    },
+    {
+      "id": "api-dns",
+      "type": "cloud",
+      "label": "Cloudflare DNS",
+      "sublabel": "DNS-only CNAME → ALB",
+      "tag": "API hostname · proxy disabled",
+      "pos": [
+        30,
+        530
       ],
       "size": [
         220,
@@ -162,7 +177,7 @@
   "boundaries": [
     {
       "kind": "region",
-      "label": "AWS \u00b7 Java runtime + EC2 runner",
+      "label": "AWS · Java runtime + EC2 runner",
       "wraps": [
         "runner",
         "alb",
@@ -175,7 +190,7 @@
     },
     {
       "kind": "region",
-      "label": "Tools \u00b7 external monitoring",
+      "label": "Tools · external monitoring",
       "wraps": [
         "monitoring"
       ],
@@ -187,7 +202,7 @@
       "id": "runner-polls",
       "from": "runner",
       "to": "github",
-      "label": "Poll jobs \u00b7 HTTPS",
+      "label": "Poll jobs · HTTPS",
       "variant": "dashed"
     },
     {
@@ -215,7 +230,7 @@
       "id": "read-secrets",
       "from": "fargate",
       "to": "secrets",
-      "label": "Execution role \u00b7 HTTPS",
+      "label": "Execution role · HTTPS",
       "variant": "security",
       "fromSide": "top",
       "toSide": "bottom"
@@ -224,7 +239,7 @@
       "id": "cloudflare-requests",
       "from": "fargate",
       "to": "cloudflare",
-      "label": "Telemetry \u00b7 HTTPS",
+      "label": "Telemetry · HTTPS",
       "fromSide": "bottom",
       "toSide": "top"
     },
@@ -232,7 +247,7 @@
       "id": "ecr-pull",
       "from": "fargate",
       "to": "registry",
-      "label": "IAM pull \u00b7 HTTPS",
+      "label": "IAM pull · HTTPS",
       "fromSide": "top",
       "toSide": "bottom"
     },
@@ -249,7 +264,16 @@
       "id": "ecr-push",
       "from": "runner",
       "to": "registry",
-      "label": "OIDC push \u00b7 HTTPS"
+      "label": "OIDC push · HTTPS"
+    },
+    {
+      "id": "api-dns-lookup",
+      "from": "users",
+      "to": "api-dns",
+      "label": "DNS resolution",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "top"
     }
   ],
   "cards": [

@@ -305,7 +305,7 @@ export API_URL="https://$API_HOST"
 
 Before the first CI run, check the exact GitHub OIDC subject prefixes for both repositories. The optional `github_app_subject_prefix` and `github_deployment_subject_prefix` fields in the private dev profile accept `repo:OWNER/REPO` or `repo:OWNER@ID/REPO@ID`; Terraform appends the main-ref or environment suffix. If your repositories use ID-bearing subjects, set those exact prefixes and review/apply an operator plan before CI. The setup menu does not discover them. Preserve these fields in `DEV_TFVARS_JSON`; see [OIDC configuration](deployment/README.md#prepare-aws).
 
-Read the SNS confirmation email and confirm the subscription. Point your API hostname to the `alb_dns_name` in `.private/setup/contract.json` using your DNS provider's CNAME or appropriate ALIAS record. Keep DNS traffic direct to the ALB for initial verification. An HTTP 503 is expected until the ECS service is deployed; certificate errors are not.
+Read the SNS confirmation email and confirm the subscription. Point your API hostname to the `alb_dns_name` in `.private/setup/contract.json` using a Cloudflare CNAME with proxy status **DNS only** (grey cloud). Users use this API hostname; Cloudflare resolves it to the ALB, and HTTPS connects directly to the ALB with its ACM certificate. Keep the API record DNS-only during normal operation as well as verification. An HTTP 503 is expected until the ECS service is deployed; certificate errors are not.
 
 If RDS creation fails with `FreeTierRestrictionError` about backup retention, the standard seven-day retention was rejected by your account plan. Set `"db_backup_retention_period": 1` in the private dev profile to retry with the minimum enabled retention. This reduces the automated recovery window to one day. The numeric account maximum is not provided in that error; AWS acceptance must be verified on apply. Preserve this setting in the GitHub `DEV_TFVARS_JSON` profile for subsequent deployments.
 
@@ -385,7 +385,7 @@ gh variable set STATE_BUCKET --repo "$GH_OWNER/$DEPLOY_REPO" --env dev --body "$
 gh variable set API_URL --repo "$GH_OWNER/$DEPLOY_REPO" --env dev --body "$API_URL"
 ```
 
-A GitHub App is needed only for the optional version-release PR/tag workflows, not basic application CI and AWS deployment. To enable it, follow the permission/key setup in [CI and Maven releases](app/docs/ci-cd.md#repository-setup), then configure `RELEASE_APP_ID` and the `RELEASE_APP_PRIVATE_KEY` secret as documented there.
+A GitHub App is needed only for the optional version-release PR/tag workflows, not basic application CI and AWS deployment. Follow [Create and install the release GitHub App](app/docs/ci-cd.md#create-and-install-the-release-github-app) for registration, permissions, private-key generation, repository installation, and configuring `RELEASE_APP_ID` and the `RELEASE_APP_PRIVATE_KEY` secret.
 
 ## 8. Publish the application and Alloy images
 

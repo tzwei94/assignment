@@ -56,7 +56,7 @@ Obtain current credentials privately from the environment owner and replace the 
 
 ## Architecture
 
-Clients → HTTPS load balancer → two private Java/Alloy Fargate tasks → private PostgreSQL RDS. A private EC2 runner publishes images and runs deployment jobs. Terraform manages the ECR repositories; monitoring services are configured separately.
+Clients resolve the API hostname through Cloudflare DNS (DNS-only CNAME → ALB), then connect directly over HTTPS: ALB → two private Java/Alloy Fargate tasks → private PostgreSQL RDS. A private EC2 runner publishes images and runs deployment jobs. Terraform manages the ECR repositories; monitoring services are configured separately.
 
 ![Architecture diagram](docs/architecture/banking-platform.png)
 
