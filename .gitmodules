@@ -1,0 +1,6 @@
+[submodule "app"]
+	path = app
+	url = ../app.git
+[submodule "deployment"]
+	path = deployment
+	url = ../deployment.git

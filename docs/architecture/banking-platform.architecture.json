@@ -1,0 +1,281 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Banking \u00b7 AWS + Tools",
+    "locale": "en",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1360,
+      850
+    ]
+  },
+  "components": [
+    {
+      "id": "github",
+      "type": "external",
+      "label": "GitHub \u00b7 2 repositories",
+      "sublabel": "Java app / Terraform deployment",
+      "pos": [
+        30,
+        100
+      ],
+      "size": [
+        190,
+        80
+      ]
+    },
+    {
+      "id": "runner",
+      "type": "backend",
+      "label": "GitHub Runner \u00b7 EC2",
+      "sublabel": "Java builds \u00b7 Docker \u00b7 Terraform",
+      "tag": "Start only for trusted jobs",
+      "pos": [
+        365,
+        100
+      ],
+      "size": [
+        220,
+        80
+      ]
+    },
+    {
+      "id": "registry",
+      "type": "backend",
+      "label": "Amazon ECR",
+      "sublabel": "Private API + Alloy repositories",
+      "tag": "Immutable tags \u00b7 IAM authentication",
+      "pos": [
+        730,
+        100
+      ],
+      "size": [
+        230,
+        80
+      ]
+    },
+    {
+      "id": "users",
+      "type": "external",
+      "label": "API Clients",
+      "sublabel": "Authenticated banking requests",
+      "pos": [
+        30,
+        330
+      ],
+      "size": [
+        190,
+        80
+      ]
+    },
+    {
+      "id": "alb",
+      "type": "cloud",
+      "label": "Application Load Balancer",
+      "sublabel": "Public subnets \u00b7 two AZs",
+      "tag": "ACM certificate",
+      "pos": [
+        365,
+        330
+      ],
+      "size": [
+        220,
+        80
+      ]
+    },
+    {
+      "id": "fargate",
+      "type": "backend",
+      "label": "ECS Fargate \u00b7 Java + Alloy",
+      "sublabel": "2 tasks \u00b7 2 AZs \u00b7 Alloy per task",
+      "tag": "Logback \u00b7 Actuator \u00b7 OpenTelemetry",
+      "pos": [
+        730,
+        330
+      ],
+      "size": [
+        230,
+        80
+      ]
+    },
+    {
+      "id": "rds",
+      "type": "database",
+      "label": "RDS PostgreSQL",
+      "sublabel": "Isolated DB subnets \u00b7 Single-AZ",
+      "tag": "Encrypted \u00b7 backups",
+      "pos": [
+        1100,
+        330
+      ],
+      "size": [
+        220,
+        80
+      ]
+    },
+    {
+      "id": "secrets",
+      "type": "security",
+      "label": "Secrets Manager",
+      "sublabel": "DB \u00b7 telemetry \u00b7 auth credentials",
+      "pos": [
+        1100,
+        100
+      ],
+      "size": [
+        220,
+        80
+      ]
+    },
+    {
+      "id": "monitoring",
+      "type": "backend",
+      "label": "Grafana observability",
+      "sublabel": "Prometheus \u00b7 Loki \u00b7 Tempo",
+      "pos": [
+        1100,
+        720
+      ],
+      "size": [
+        220,
+        80
+      ],
+      "tag": "Argo CD \u00b7 pinned Helm charts"
+    },
+    {
+      "id": "cloudflare",
+      "type": "cloud",
+      "label": "Cloudflare Tunnel",
+      "sublabel": "HTTPS contract \u00b7 authenticated",
+      "tag": "Tools owns tunnel + API gateway",
+      "pos": [
+        365,
+        560
+      ],
+      "size": [
+        220,
+        80
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "AWS \u00b7 Java runtime + EC2 runner",
+      "wraps": [
+        "runner",
+        "alb",
+        "fargate",
+        "rds",
+        "secrets",
+        "registry"
+      ],
+      "pad": 20
+    },
+    {
+      "kind": "region",
+      "label": "Tools \u00b7 existing K3s on VMs \u00b7 one physical host",
+      "wraps": [
+        "monitoring"
+      ],
+      "pad": 22
+    }
+  ],
+  "connections": [
+    {
+      "id": "runner-polls",
+      "from": "runner",
+      "to": "github",
+      "label": "Poll jobs \u00b7 HTTPS",
+      "variant": "dashed"
+    },
+    {
+      "id": "client-request",
+      "from": "users",
+      "to": "alb",
+      "label": "HTTPS :443",
+      "variant": "emphasis"
+    },
+    {
+      "id": "alb-api",
+      "from": "alb",
+      "to": "fargate",
+      "label": "HTTP :8080",
+      "variant": "emphasis"
+    },
+    {
+      "id": "sql-tls",
+      "from": "fargate",
+      "to": "rds",
+      "label": "PostgreSQL TLS :5432",
+      "variant": "emphasis"
+    },
+    {
+      "id": "read-secrets",
+      "from": "fargate",
+      "to": "secrets",
+      "label": "Execution role \u00b7 HTTPS",
+      "variant": "security",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "cloudflare-requests",
+      "from": "fargate",
+      "to": "cloudflare",
+      "label": "Telemetry \u00b7 HTTPS",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "ecr-pull",
+      "from": "fargate",
+      "to": "registry",
+      "label": "IAM pull \u00b7 HTTPS",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "tunnel-monitoring",
+      "from": "cloudflare",
+      "to": "monitoring",
+      "label": "Telemetry requests",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "left"
+    },
+    {
+      "id": "ecr-push",
+      "from": "runner",
+      "to": "registry",
+      "label": "OIDC push \u00b7 HTTPS"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Fargate observability",
+      "items": [
+        "One Alloy sidecar: logs, metrics and traces",
+        "Java enables Logback, Actuator and OTel"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Tools service ownership",
+      "items": [
+        "Argo CD reconciles Helm charts",
+        "VM Terraform / Ansible stay separate"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Deployment status",
+      "items": [
+        "Code tested locally; AWS deployment deferred",
+        "ECR publication / telemetry gateways pending"
+      ]
+    }
+  ]
+}
