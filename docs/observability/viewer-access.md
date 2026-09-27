@@ -6,7 +6,7 @@ The `banking-viewer` account has read-only access to the three prepared Banking 
 
 - URL: [Grafana login](https://grafana.tzwei.me/login)
 - Username: `banking-viewer`
-- Password: see [Grafana login credentials](README.md#grafana-login) in the observability guide. The owner also keeps a local copy in `~/.private/grafana/banking-viewer.json`.
+- Password: obtain it privately from the environment owner. Do not commit it to documentation or dashboard exports.
 - Organization: **Banking API Review**
 
 | Dashboard | Link | Repository definition |
@@ -31,11 +31,11 @@ When updating dashboards, sign in as an administrator, select **Banking API Revi
 
 The data source UIDs are `prometheus`, `loki`, and `tempo`. Keep their settings aligned with the source organization when changing service graph or trace integrations. Keep backend and administrator credentials out of dashboard exports.
 
-To rotate access, use Grafana server administration to change this user's password, update the observability guide and private credential record, and revoke existing sessions if necessary. To revoke access entirely, disable the user in server administration.
+To rotate access, use Grafana server administration to change this user's password, update the private credential record and privately notify authorized viewers, and revoke existing sessions if necessary. To revoke access entirely, disable the user in server administration.
 
 ## Verification
 
-Verified on 2026-09-27 against Grafana 13.2.2 with the live `banking-viewer` account:
+The following is the previously recorded verification from 2026-09-27 against Grafana 13.2.2 with the live `banking-viewer` account. It was not rerun during the documentation audit; recheck after user, organization, dashboard or backend changes:
 
 - Browser login succeeded; the dashboard list contained exactly the three approved dashboards. The service graph rendered the Banking API database dependency.
 - All three dashboard reads returned HTTP 200 with `canEdit`, `canSave`, and `canAdmin` false. Save attempts returned HTTP 403.

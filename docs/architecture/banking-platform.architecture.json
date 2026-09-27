@@ -15,7 +15,7 @@
       "id": "github",
       "type": "external",
       "label": "GitHub \u00b7 2 repositories",
-      "sublabel": "Java app / Terraform deployment",
+      "sublabel": "app / deployment · hosted builds",
       "pos": [
         30,
         100
@@ -29,7 +29,7 @@
       "id": "runner",
       "type": "backend",
       "label": "GitHub Runner \u00b7 EC2",
-      "sublabel": "Java builds \u00b7 Docker \u00b7 Terraform",
+      "sublabel": "Image publish \u00b7 Terraform",
       "tag": "Start only for trusted jobs",
       "pos": [
         365,
@@ -175,7 +175,7 @@
     },
     {
       "kind": "region",
-      "label": "Tools \u00b7 existing K3s on VMs \u00b7 one physical host",
+      "label": "Tools \u00b7 external monitoring",
       "wraps": [
         "monitoring"
       ],
@@ -271,10 +271,10 @@
     },
     {
       "dot": "amber",
-      "title": "Deployment status",
+      "title": "Implementation scope",
       "items": [
-        "Code tested locally; AWS deployment deferred",
-        "ECR publication / telemetry gateways pending"
+        "CI publishes tested image digests to ECR",
+        "Terraform models AWS; verify live state separately"
       ]
     }
   ]

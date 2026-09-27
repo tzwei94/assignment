@@ -2,13 +2,15 @@
 
 Use Grafana to inspect the Banking API's metrics, application logs, and trace-derived service dependencies.
 
+Dashboard queries and instructions were checked against the committed exports on 27 September 2026. URLs and permissions below describe the review environment recorded in [viewer access](viewer-access.md); they are not a fresh live availability check. A new installation must import the dashboards and configure its own users and data sources.
+
 ## Grafana login
 
 | Setting | Value |
 |---|---|
 | URL | [Grafana](https://grafana.tzwei.me/login) |
 | Username | `banking-viewer` |
-| Password | `rrQe0Aruxg4UFxxWe6Qf_qWC7_9Cmor4s2PsxJWJ` |
+| Password | Obtain the current password privately from the environment owner. |
 | Organization | **Banking API Review** (`orgId=2`) |
 | Access | View-only access to the three Banking API dashboards below |
 
@@ -20,7 +22,7 @@ Use Grafana to inspect the Banking API's metrics, application logs, and trace-de
 | [Log Search](https://grafana.tzwei.me/d/banking-api-logs?orgId=2) | Search readable application messages by environment, operation, severity, task, and message text |
 | [Service Graph](https://grafana.tzwei.me/d/banking-api-service-graph?orgId=2) | Inspect trace-derived dependencies, request rates, error ratios, and dependency latency |
 
-Start with **Overview** and select the environment and instance. With both deployed tasks running, healthy scrapes should total two. Missing telemetry is different from zero traffic: check scrape health before interpreting empty panels. API traffic excludes readiness and Actuator requests. Mean API latency is a request-weighted average, not a percentile.
+Start with **Overview** and select the environment and instance. With both deployed tasks running, healthy scrapes should total two when **all** instances are selected (one when filtered to a single task). Missing telemetry is different from zero traffic: check scrape health before interpreting empty panels. API traffic excludes readiness and Actuator requests. Mean API latency is a request-weighted average, not a percentile.
 
 For an individual operation, open **Log Search**, choose `deposit` or `withdrawal`, and enter a phrase in **Message contains**. The search is case-sensitive; leave it empty to show all matching messages. Avoid backticks in search text. The dashboard shows up to 1,000 messages, newest first. Expand a row for fields such as severity, task, and `trace_id`. Operation filtering matches message text; rejected requests and idempotent retries may not have an operation message.
 
@@ -60,6 +62,6 @@ The repository contains exports of the prepared dashboards:
 - [Log Search JSON](banking-api-logs.json)
 - [Service Graph JSON](banking-api-service-graph.json)
 
-The viewer organization holds separate copies from Main Org. Update both copies when changing a dashboard, preserving their UIDs and the viewer's explicit View permissions. Account and organization settings are stored in Grafana's database. After rotating the viewer password, update this guide and the owner's private credential record together.
+The viewer organization holds separate copies from Main Org. Update both copies when changing a dashboard, preserving their UIDs and the viewer's explicit View permissions. Account and organization settings are stored in Grafana's database. After rotating the viewer password, update the owner's private credential record and share access through the approved private channel. Never put the password in this guide.
 
 For collection settings, buffering limits, deployment variables, and local validation commands, see the [Alloy telemetry contract](../../deployment/deploy/monitoring/README.md).

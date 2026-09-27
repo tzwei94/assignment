@@ -4,7 +4,7 @@ Run the numbered steps in order. Commands run in **Bash on your workstation, fro
 
 For a local-only demonstration, use [QUICKSTART.md](QUICKSTART.md). It needs no AWS account. The [architecture document](docs/architecture.md) explains the design and contains the diagram.
 
-**Status:** these commands are checked against the repository's scripts; they are not a record of a successful AWS deployment. Review the [Alloy validation record](deployment/deploy/monitoring/security-review.md) and pass the publication scan before publishing that image. Check [account eligibility and costs](docs/budget.md) before creating resources. Expect roughly $50–65 for a low-traffic week, not a permanently free deployment.
+**Scope:** these commands describe setup from a fresh checkout and were checked against the repository on 27 September 2026. For an existing environment, load its outputs and resume at the unfinished step; do not repeat first-deployment bootstrap. This guide is not a live deployment-status report. Review the [Alloy validation record](deployment/deploy/monitoring/security-review.md) and pass the publication scan before publishing that image. Check [account eligibility and costs](docs/budget.md) before creating resources. Expect roughly $50–65 for a low-traffic week, not a permanently free deployment.
 
 ## macOS prerequisites
 
@@ -185,7 +185,7 @@ mkdir -p .private/setup
 
 Use the actual repository names if yours differ. Keep the resource name `banking-dev`: the deployment workflow currently uses that name. Pick a different globally unique state-bucket name if the suggested one is unavailable.
 
-Before public access, complete the [existing-repository history cleanup](docs/public-sharing.md). Public self-hosted runner access also needs an enforceable trust boundary: restrict an organization runner group to the trusted publication workflow on `main`. If your GitHub plan cannot enforce that boundary, keep the runner-connected repository private until the runner arrangement is revised. A workflow's `if` condition alone cannot make arbitrary PR workflow changes safe.
+The repositories are already public; see the [current public repository review](docs/public-sharing.md). Self-hosted runner access needs an enforceable trust boundary: restrict an organization runner group to the trusted publication workflow on `main`. If your GitHub plan cannot enforce that boundary, keep the runner-connected repository private until the runner arrangement is revised. A workflow's `if` condition alone cannot make arbitrary PR workflow changes safe.
 
 ## 2. Run the local checks
 
@@ -303,6 +303,8 @@ export RUNNER_ID="$(jq -r .runner_instance_id .private/setup/contract.json)"
 export API_URL="https://$API_HOST"
 ```
 
+Before the first CI run, check the exact GitHub OIDC subject prefixes for both repositories. The optional `github_app_subject_prefix` and `github_deployment_subject_prefix` fields in the private dev profile accept `repo:OWNER/REPO` or `repo:OWNER@ID/REPO@ID`; Terraform appends the main-ref or environment suffix. If your repositories use ID-bearing subjects, set those exact prefixes and review/apply an operator plan before CI. The setup menu does not discover them. Preserve these fields in `DEV_TFVARS_JSON`; see [OIDC configuration](deployment/README.md#prepare-aws).
+
 Read the SNS confirmation email and confirm the subscription. Point your API hostname to the `alb_dns_name` in `.private/setup/contract.json` using your DNS provider's CNAME or appropriate ALIAS record. Keep DNS traffic direct to the ALB for initial verification. An HTTP 503 is expected until the ECS service is deployed; certificate errors are not.
 
 If RDS creation fails with `FreeTierRestrictionError` about backup retention, the standard seven-day retention was rejected by your account plan. Set `"db_backup_retention_period": 1` in the private dev profile to retry with the minimum enabled retention. This reduces the automated recovery window to one day. The numeric account maximum is not provided in that error; AWS acceptance must be verified on apply. Preserve this setting in the GitHub `DEV_TFVARS_JSON` profile for subsequent deployments.
@@ -406,7 +408,7 @@ export ALLOY_IMAGE='REPLACE_WITH_THE_PRINTED_REPOSITORY@sha256:DIGEST'
 
 The temporary `SOURCE_SHA=...` applies only to the Alloy command; the application `SOURCE_SHA` above stays intact. Do not bypass the scanner or substitute a mutable tag. The final printed digest must refer to the image that passed validation and scanning.
 
-Rebuild and publish **both** images for this task-definition update: Java now owns `/opt/app/certs/rds-ca.pem`, and Alloy uses the generic `/var/log/app` mount with environment-configured telemetry. Keep the prior task definitions and image digests available for rollback. Database certificate rotation subsequently requires only a Java-image rebuild.
+When upgrading from the older initializer-based task definition, rebuild and publish **both** images: Java owns `/opt/app/certs/rds-ca.pem`, and Alloy uses the generic `/var/log/app` mount with environment-configured telemetry. Keep the prior task definitions and image digests available for rollback. Database certificate rotation subsequently requires only a Java-image rebuild.
 
 ## 9. Set real release inputs and bootstrap the database
 
@@ -477,7 +479,7 @@ aws sns list-subscriptions-by-topic \
   --topic-arn "$(jq -r .alarm_topic_arn .private/setup/contract.json)"
 ```
 
-Confirm the subscription is not pending. In Grafana, generate API traffic and verify application logs in Loki, metrics in Prometheus and traces in Tempo. Check that unauthenticated ingestion is rejected. Never publish logs containing tokens or account details. External dashboards, retention and credentials are managed with those services; this repository does not install them.
+Confirm the subscription is not pending. For runner host metrics, separately install and configure [runner Alloy](deployment/deploy/monitoring/README.md); ordinary runner provisioning does not enable it. In Grafana, generate API traffic and verify application logs in Loki, metrics in Prometheus and traces in Tempo. Check that unauthenticated ingestion is rejected. Never publish logs containing tokens or account details. External dashboards, retention and credentials are managed with those services; this repository does not install them.
 
 For a controlled SNS test, set the runner status alarm to `ALARM`, confirm email delivery, then let normal metric evaluation restore its real state:
 
@@ -548,6 +550,8 @@ terraform -chdir="$DEV_ROOT" plan -var-file="$DEV_VARS" \
 terraform -chdir="$DEV_ROOT" apply "$PROJECT_ROOT/.private/setup/disable-protection.tfplan"
 deployment/deploy/scripts/teardown.sh --plan
 ```
+
+The shell helper `--apply` creates and immediately applies a new destroy plan; it does not apply the earlier `--plan` preview or prompt again. Prefer menu option 16 when you need to review and apply the same saved plan.
 
 Review the plan. The ALB log bucket is `banking-dev-alb-$ACCOUNT_ID`; it must be empty to destroy. Archive anything required before deleting those logs. Never empty the separate state bucket as part of dev teardown.
 

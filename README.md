@@ -12,7 +12,7 @@ A Java banking demo with three authenticated operations: check a balance, deposi
 | Understand the design | **[Architecture](docs/architecture.md)** — networking, security, CI/CD, monitoring and design choices |
 | View application metrics, logs and service graph | [Observability guide and Grafana login](docs/observability/README.md) |
 | Check costs and account restrictions | [AWS compatibility and budget](docs/budget.md) |
-| Prepare the existing repositories for public access | [Public sharing checklist](docs/public-sharing.md) |
+| Review public repository status and maintenance | [Public repository notes](docs/public-sharing.md) |
 
 ## Architecture
 
@@ -44,8 +44,15 @@ See [application reference](app/README.md) and [deployment reference](deployment
 | Monitoring | CloudWatch alarms/logs and SNS; Alloy image forwards application logs, metrics and traces; per-app settings are supplied at deployment |
 | Documentation | Architecture with diagram, source locations, local quickstart and sequential AWS deployment guide |
 
+## Documentation scope
+
+The guides describe the source checked on 27 September 2026. Deployment status and dated scan/access records are separate from source verification; use the [verification guide](docs/verification.md) to check your environment.
+
 ## Current limitations
 
-Check [account eligibility and costs](docs/budget.md) before deploying. Replace example domains and profile values, then run the [deployment checks](docs/verification.md#deployment-checks). The [Alloy scan record](deployment/deploy/monitoring/security-review.md) documents the tested image; publication reruns the scan.
+- The API operates on synthetic seeded accounts; account creation, customer onboarding and an external identity provider are outside its scope.
+- The dev baseline has two API tasks, but Single-AZ RDS, one NAT gateway, one runner and external monitoring remain single points of failure. Autoscaling is not configured.
+- Application rollback restores a previous task definition; it does not roll back database migrations.
+- Local smoke checks use a telemetry test receiver. Live backend ingestion, recovery and deployment health need the [deployment checks](docs/verification.md#deployment-checks).
 
-Before making the repositories public, follow the [history and publication checklist](docs/public-sharing.md). Old Git history contains private source material.
+All three repositories are already public. See [public repository status and maintenance](docs/public-sharing.md) for the verified history scope and credential handling. The [Alloy scan record](deployment/deploy/monitoring/security-review.md) records the successful 1.20.0 candidate scan; image publication performs a new scan.
