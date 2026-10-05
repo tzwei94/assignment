@@ -5,7 +5,7 @@ Run these checks from the main repository root. See the [quickstart](../QUICKSTA
 | Command | Coverage |
 |---|---|
 | `make verify` | Java checks and PostgreSQL tests, API schema, release policy, Terraform formatting/validation/mock tests, deployment scripts and Alloy configuration |
-| `make smoke` | Build both images; test API operations, migrations, restart persistence, telemetry and receiver recovery; remove the test stack afterward |
+| `make smoke` | Build both images; test API operations, migration/rollback commands, API restart, telemetry delivery to the test receiver and receiver restart; remove the test stack afterward |
 | `uv run deployment/deploy/tests/check_alloy_runtime.py` | Reuse the Alloy image with another service and a mounted configuration |
 | `bash deployment/deploy/tests/test-container-volumes.sh` | Non-root volume access, both log-volume initialization orders, database CA access and existing-volume preservation |
 
@@ -16,6 +16,10 @@ Repository-specific instructions:
 - [Application tests](../app/docs/local-verification.md)
 - [Infrastructure and deployment tests](../deployment/docs/local-verification.md)
 - [Alloy image scan record](../deployment/deploy/monitoring/security-review.md)
+
+The smoke sequence returns the balance to its starting value before restarting the API. It checks continuity after restart, but does not prove persistence of a nonzero balance change. Receiver request counts confirm local delivery, not backend parsing, durable buffering or loss-free outage recovery.
+
+For documentation-only edits, check local links/anchors, fenced command syntax and referenced options against the scripts. Record those checks separately from `make verify`, `make smoke` and live deployment validation.
 
 ## Deployment checks
 

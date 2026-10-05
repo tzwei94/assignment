@@ -4,7 +4,7 @@ Run the numbered steps in order. Commands run in **Bash on your workstation, fro
 
 For a local-only demonstration, use [QUICKSTART.md](QUICKSTART.md). It needs no AWS account. The [architecture document](docs/architecture.md) explains the design and contains the diagram.
 
-**Status:** these commands are checked against the repository's scripts; they are not a record of a successful AWS deployment. Review the [Alloy validation record](deployment/deploy/monitoring/security-review.md) and pass the publication scan before publishing that image. Check [account eligibility and costs](docs/budget.md) before creating resources. Expect roughly $50–65 for a low-traffic week, not a permanently free deployment.
+**Scope:** these commands describe setup from a fresh checkout and were checked against the repository on 27 September 2026. For an existing environment, load its outputs and resume at the unfinished step; do not repeat first-deployment bootstrap. This guide is not a live deployment-status report. Review the [Alloy validation record](deployment/deploy/monitoring/security-review.md) and pass the publication scan before publishing that image. Check [account eligibility and costs](docs/budget.md) before creating resources. Expect roughly $50–65 for a low-traffic week, not a permanently free deployment.
 
 ## macOS prerequisites
 
@@ -23,7 +23,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 Clone this repository with its submodules if needed, then start the menu from its root:
 
 ```sh
-git clone --recurse-submodules https://github.com/tzwei94/assignment.git banking-demo
+git clone --recurse-submodules https://github.com/tzwei94/banking-platform.git banking-demo
 cd banking-demo
 uv run deployment/deploy/scripts/setup.py
 ```
@@ -164,8 +164,8 @@ Verify the returned account before continuing. The following variables are non-s
 ```sh
 export PROJECT_ROOT="$PWD"
 export GH_OWNER=REPLACE_GITHUB_OWNER
-export APP_REPO=app
-export DEPLOY_REPO=deployment
+export APP_REPO=banking-api
+export DEPLOY_REPO=banking-infrastructure
 export API_HOST=api.REPLACE_YOUR_DOMAIN
 export ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
 export REGISTRY_HOST="$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com"
@@ -185,7 +185,7 @@ mkdir -p .private/setup
 
 Use the actual repository names if yours differ. Keep the resource name `banking-dev`: the deployment workflow currently uses that name. Pick a different globally unique state-bucket name if the suggested one is unavailable.
 
-Before public access, complete the [existing-repository history cleanup](docs/public-sharing.md). Public self-hosted runner access also needs an enforceable trust boundary: restrict an organization runner group to the trusted publication workflow on `main`. If your GitHub plan cannot enforce that boundary, keep the runner-connected repository private until the runner arrangement is revised. A workflow's `if` condition alone cannot make arbitrary PR workflow changes safe.
+The repositories are already public; see the [current public repository review](docs/public-sharing.md). Self-hosted runner access needs an enforceable trust boundary: restrict an organization runner group to the trusted publication workflow on `main`. If your GitHub plan cannot enforce that boundary, keep the runner-connected repository private until the runner arrangement is revised. A workflow's `if` condition alone cannot make arbitrary PR workflow changes safe.
 
 ## 2. Run the local checks
 
@@ -303,7 +303,9 @@ export RUNNER_ID="$(jq -r .runner_instance_id .private/setup/contract.json)"
 export API_URL="https://$API_HOST"
 ```
 
-Read the SNS confirmation email and confirm the subscription. Point your API hostname to the `alb_dns_name` in `.private/setup/contract.json` using your DNS provider's CNAME or appropriate ALIAS record. Keep DNS traffic direct to the ALB for initial verification. An HTTP 503 is expected until the ECS service is deployed; certificate errors are not.
+Before the first CI run, check the exact GitHub OIDC subject prefixes for both repositories. The optional `github_app_subject_prefix` and `github_deployment_subject_prefix` fields in the private dev profile accept `repo:OWNER/REPO` or `repo:OWNER@ID/REPO@ID`; Terraform appends the main-ref or environment suffix. If your repositories use ID-bearing subjects, set those exact prefixes and review/apply an operator plan before CI. The setup menu does not discover them. Preserve these fields in `DEV_TFVARS_JSON`; see [OIDC configuration](deployment/README.md#prepare-aws).
+
+Read the SNS confirmation email and confirm the subscription. Point your API hostname to the `alb_dns_name` in `.private/setup/contract.json` using a Cloudflare CNAME with proxy status **DNS only** (grey cloud). Users use this API hostname; Cloudflare resolves it to the ALB, and HTTPS connects directly to the ALB with its ACM certificate. Keep the API record DNS-only during normal operation as well as verification. An HTTP 503 is expected until the ECS service is deployed; certificate errors are not.
 
 If RDS creation fails with `FreeTierRestrictionError` about backup retention, the standard seven-day retention was rejected by your account plan. Set `"db_backup_retention_period": 1` in the private dev profile to retry with the minimum enabled retention. This reduces the automated recovery window to one day. The numeric account maximum is not provided in that error; AWS acceptance must be verified on apply. Preserve this setting in the GitHub `DEV_TFVARS_JSON` profile for subsequent deployments.
 
@@ -368,6 +370,13 @@ gh variable set AWS_REGION --repo "$GH_OWNER/$APP_REPO" --body "$AWS_REGION"
 gh variable set AWS_BUILD_ROLE_ARN --repo "$GH_OWNER/$APP_REPO" \
   --body "$(jq -r .build_role_arn .private/setup/contract.json)"
 gh variable set IMAGE_REPOSITORY --repo "$GH_OWNER/$APP_REPO" --body "$IMAGE_REPOSITORY"
+gh variable set DEPLOYMENT_REPOSITORY --repo "$GH_OWNER/$APP_REPO" --body "$GH_OWNER/$DEPLOY_REPO"
+
+# Alloy publishing runs on hosted runners, without the dev environment.
+gh variable set AWS_REGION --repo "$GH_OWNER/$DEPLOY_REPO" --body "$AWS_REGION"
+gh variable set AWS_ALLOY_PUBLISH_ROLE_ARN --repo "$GH_OWNER/$DEPLOY_REPO" \
+  --body "$(jq -er .alloy_publish_role_arn .private/setup/contract.json)"
+gh variable set ALLOY_REPOSITORY --repo "$GH_OWNER/$DEPLOY_REPO" --body "$ALLOY_REPOSITORY"
 
 gh variable set AWS_REGION --repo "$GH_OWNER/$DEPLOY_REPO" --env dev --body "$AWS_REGION"
 gh variable set AWS_DEPLOY_ROLE_ARN --repo "$GH_OWNER/$DEPLOY_REPO" --env dev \
@@ -376,7 +385,7 @@ gh variable set STATE_BUCKET --repo "$GH_OWNER/$DEPLOY_REPO" --env dev --body "$
 gh variable set API_URL --repo "$GH_OWNER/$DEPLOY_REPO" --env dev --body "$API_URL"
 ```
 
-A GitHub App is needed only for the optional version-release PR/tag workflows, not basic application CI and AWS deployment. To enable it, follow the permission/key setup in [CI and Maven releases](app/docs/ci-cd.md#repository-setup), then configure `RELEASE_APP_ID` and the `RELEASE_APP_PRIVATE_KEY` secret as documented there.
+A GitHub App is needed only for the optional version-release PR/tag workflows, not basic application CI and AWS deployment. Follow [Create and install the release GitHub App](app/docs/ci-cd.md#create-and-install-the-release-github-app) for registration, permissions, private-key generation, repository installation, and configuring `RELEASE_APP_ID` and the `RELEASE_APP_PRIVATE_KEY` secret.
 
 ## 8. Publish the application and Alloy images
 
@@ -396,17 +405,24 @@ export SOURCE_SHA="$(jq -er .source_sha .private/setup/app-release/image-manifes
 
 Select a successful **main-push** run with publication, not a PR run. The manifest directory must be empty before downloading another run. The manifest is the authoritative pairing of source commit and immutable image digest.
 
-For Alloy, first review its validation record and commit the collector change in the existing deployment repository. Run its publication script from your workstation; it validates, scans and pushes only on success:
+For Alloy, use **Publish Alloy** in the deployment repository on `main`. Leave `alloy_image` blank in the deployment form to read the latest successful publish manifest at run time, or enter a digest to select a specific version. Missing or expired manifests stop deployment until you publish again or supply a digest. Publication is manual-only; collector and publishing workflow changes on `main` do not trigger it. The dedicated role and repository variables above must exist first; for an existing environment, apply the reviewed operator IAM change and refresh the contract before configuring the variables. The normal application deployment workflow cannot create the role.
 
 ```sh
-SOURCE_SHA="$(git -C deployment rev-parse HEAD)" \
-  deployment/deploy/scripts/publish-alloy.sh
-export ALLOY_IMAGE='REPLACE_WITH_THE_PRINTED_REPOSITORY@sha256:DIGEST'
+gh workflow run publish-alloy.yml --repo "$GH_OWNER/$DEPLOY_REPO" --ref main
+gh run list --repo "$GH_OWNER/$DEPLOY_REPO" --workflow publish-alloy.yml --branch main
+export ALLOY_RUN_ID=REPLACE_SELECTED_ALLOY_RUN_ID
+gh run watch "$ALLOY_RUN_ID" --repo "$GH_OWNER/$DEPLOY_REPO" --exit-status
+export ALLOY_RUN_ATTEMPT="$(gh run view "$ALLOY_RUN_ID" --repo "$GH_OWNER/$DEPLOY_REPO" --json attempt --jq .attempt)"
+gh run download "$ALLOY_RUN_ID" --repo "$GH_OWNER/$DEPLOY_REPO" \
+  --name "alloy-image-manifest-$ALLOY_RUN_ID-$ALLOY_RUN_ATTEMPT" --dir .private/setup/alloy-release
+export ALLOY_IMAGE="$(jq -er .alloy_image .private/setup/alloy-release/alloy-image-manifest.json)"
 ```
 
-The temporary `SOURCE_SHA=...` applies only to the Alloy command; the application `SOURCE_SHA` above stays intact. Do not bypass the scanner or substitute a mutable tag. The final printed digest must refer to the image that passed validation and scanning.
+Choose the successful run for the intended collector commit and use an empty download directory. You can also copy `alloy_image` directly from its run summary. The app publish/release summary shows the matching application `image` and `source_sha`, all deployment input names and a copyable dispatch command. Keep the application `SOURCE_SHA` above; the Alloy manifest's `alloy_source_sha` belongs to the deployment repository. Use `action=deploy`, and set `first_release=true` only for the initial deployment after the next database bootstrap step; later deployments use `false`. Do not bypass the scanner or substitute mutable tags.
 
-Rebuild and publish **both** images for this task-definition update: Java now owns `/opt/app/certs/rds-ca.pem`, and Alloy uses the generic `/var/log/app` mount with environment-configured telemetry. Keep the prior task definitions and image digests available for rollback. Database certificate rotation subsequently requires only a Java-image rebuild.
+Operator publication remains available with `SOURCE_SHA="$(git -C deployment rev-parse HEAD)" deployment/deploy/scripts/publish-alloy.sh` and scoped ECR credentials; copy the final printed digest into `ALLOY_IMAGE`.
+
+When upgrading from the older initializer-based task definition, rebuild and publish **both** images: Java owns `/opt/app/certs/rds-ca.pem`, and Alloy uses the generic `/var/log/app` mount with environment-configured telemetry. Keep the prior task definitions and image digests available for rollback. Database certificate rotation subsequently requires only a Java-image rebuild.
 
 ## 9. Set real release inputs and bootstrap the database
 
@@ -477,7 +493,7 @@ aws sns list-subscriptions-by-topic \
   --topic-arn "$(jq -r .alarm_topic_arn .private/setup/contract.json)"
 ```
 
-Confirm the subscription is not pending. In Grafana, generate API traffic and verify application logs in Loki, metrics in Prometheus and traces in Tempo. Check that unauthenticated ingestion is rejected. Never publish logs containing tokens or account details. External dashboards, retention and credentials are managed with those services; this repository does not install them.
+Confirm the subscription is not pending. For runner host metrics, separately install and configure [runner Alloy](deployment/deploy/monitoring/README.md); ordinary runner provisioning does not enable it. In Grafana, generate API traffic and verify application logs in Loki, metrics in Prometheus and traces in Tempo. Check that unauthenticated ingestion is rejected. Never publish logs containing tokens or account details. External dashboards, retention and credentials are managed with those services; this repository does not install them.
 
 For a controlled SNS test, set the runner status alarm to `ALARM`, confirm email delivery, then let normal metric evaluation restore its real state:
 
@@ -548,6 +564,8 @@ terraform -chdir="$DEV_ROOT" plan -var-file="$DEV_VARS" \
 terraform -chdir="$DEV_ROOT" apply "$PROJECT_ROOT/.private/setup/disable-protection.tfplan"
 deployment/deploy/scripts/teardown.sh --plan
 ```
+
+The shell helper `--apply` creates and immediately applies a new destroy plan; it does not apply the earlier `--plan` preview or prompt again. Prefer menu option 16 when you need to review and apply the same saved plan.
 
 Review the plan. The ALB log bucket is `banking-dev-alb-$ACCOUNT_ID`; it must be empty to destroy. Archive anything required before deleting those logs. Never empty the separate state bucket as part of dev teardown.
 

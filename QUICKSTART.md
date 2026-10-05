@@ -11,7 +11,7 @@ On macOS, follow [the prerequisite bootstrap](SETUP.md#macos-prerequisites), the
 Clone the main repository, including its application and deployment submodules:
 
 ```sh
-git clone --recurse-submodules https://github.com/tzwei94/assignment.git banking-demo
+git clone --recurse-submodules https://github.com/tzwei94/banking-platform.git banking-demo
 cd banking-demo
 git submodule update --init --recursive
 docker info
@@ -19,7 +19,7 @@ docker compose version
 uv --version
 ```
 
-Use an account with access to all three repositories. For an existing checkout, start with `cd` into its root and run the last four commands. `docker info` must succeed before continuing.
+All three source repositories are public. For an existing checkout, start with `cd` into its root and run the last four commands. `docker info` must succeed before continuing.
 
 ## 2. Start locally
 
@@ -57,7 +57,7 @@ export API_URL="http://127.0.0.1:$API_PORT"
 curl -fsS --retry 30 --retry-connrefused --retry-all-errors --retry-delay 1 "$API_URL/readyz"
 ```
 
-Expected: `{"status":"UP"}`. The port is assigned automatically. The local API uses HTTP; public HTTPS terminates at the AWS load balancer.
+Expected: `{"status":"UP"}`. Readiness checks database connectivity, not whether the banking schema has been migrated. The port is assigned automatically. The local API uses HTTP; public HTTPS terminates at the AWS load balancer.
 
 The images prepare fresh shared log-volume permissions during their builds; there is no startup initializer. If reusing older local volumes, follow the [volume ownership guidance](deployment/deploy/monitoring/README.md#direct-startup-and-volume-ownership).
 
@@ -90,6 +90,8 @@ curl -fsS -H "Authorization: Bearer $API_TOKEN" "$API_URL$ACCOUNT_PATH/balance"
 
 Reusing a key with the same body returns the previous result; use a new key for a new operation. The demo token lasts 15 minutes; call `/auth/token` again with the command when it expires. See the [API contract](app/README.md#api-contract) for status codes. If startup fails, check `"${compose[@]}" logs db api`.
 
+If you reopen the terminal, discover the port again with `docker port banking-quickstart-api-1 8080/tcp` (this does not require restoring Compose environment variables). Use the original local credentials; generating new ones does not update an existing database.
+
 ### Use Postman
 
 Import [the collection](app/postman/Banking-API.postman_collection.json) and [environment template](app/postman/Local.postman_environment.json). Select the environment, set `base_url` to `$API_URL`, and set `token_username` / `token_password` to the `TOKEN_USERNAME` / `TOKEN_PASSWORD` used at startup. You can print these in your local terminal with `printf '%s\n' "$API_URL" "$TOKEN_USERNAME" "$TOKEN_PASSWORD"`.
@@ -119,9 +121,9 @@ From the workspace root:
 | Command | Purpose |
 |---|---|
 | `make smoke` | Build both images, test the local stack, then clean it up automatically. |
-| `make verify` | Validate both repositories: application tests, CI policy, API contract and mocked Terraform/deployment tests. |
+| `make verify` | Validate both repositories: application tests, CI policy, API contract and mocked Terraform/deployment tests. Docker is also required for PostgreSQL and Alloy validation. |
 
-`make verify` additionally needs **Java 25**, **Node.js 24**, **Terraform 1.16.1** and **unzip**. Install those versions, then select your installed JDK before running it:
+`make verify` additionally needs **Java 25**, **Node.js 24**, **Terraform >=1.10,<2.0** (CI pins 1.16.1) and **unzip**. Install those versions, then select your installed JDK before running it:
 
 ```sh
 export JAVA_HOME="/path/to/your/jdk-25"

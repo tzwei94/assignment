@@ -1,8 +1,10 @@
 # AWS credit-account compatibility and budget
 
-Reviewed 26 September 2026 for the Terraform in `deployment/infra`, using Singapore (`ap-southeast-1`). **The default configuration cannot be certified as fully deployable on the AWS Free plan.** There is a documented EC2 size mismatch, account-specific service access/quotas are unverified, and image publication plus external endpoints still require setup. No AWS account was queried and no resources were deployed.
+Source configuration reviewed 27 September 2026 for the Terraform in `deployment/infra`, using Singapore (`ap-southeast-1`). The worked prices below retain their 26 September 2026 reference date and were not repriced in this documentation audit. **The default configuration cannot be certified as fully deployable on the AWS Free plan.** There is a documented EC2 size mismatch, account-specific service access/quotas are unverified, and a fresh installation requires image publication and external endpoint configuration. This review does not query account billing or certify the live deployment.
 
 ## Free plan versus credits
+
+The [AWS Free Tier FAQ](https://aws.amazon.com/free/free-tier-faqs/) was rechecked on 27 September 2026. The component eligibility notes and price estimates below still need account-specific confirmation.
 
 New eligible customers receive $100 at sign-up and can earn another $100; do not assume a $200 balance already exists. The Free plan ends after six months or when credits run out, whichever comes first. A Paid plan offers broader access and can retain eligible unexpired credits, but charges beyond credits are payable. Joining an AWS Organization or using Control Tower changes credit eligibility. Check your actual plan, credit balance, expiry and applicable services in Billing before provisioning. [AWS Free Tier FAQ](https://aws.amazon.com/free/free-tier-faqs/).
 
@@ -10,7 +12,7 @@ New eligible customers receive $100 at sign-up and can earn another $100; do not
 
 | Terraform component | Assessment and prerequisites |
 |---|---|
-| EC2 runner + 30 GiB gp3 EBS | Default `t3.medium` is absent from the published Free-plan list. The example profile now explicitly uses listed `t3.small` with an Amazon Linux 2023 x86_64 AMI. It has 2 GiB rather than 4 GiB: Java builds and image scans need capacity testing; do not assume performance equivalence. Check the account's EC2/EBS limits. |
+| EC2 runner + 30 GiB gp3 EBS | Default `t3.medium` is absent from the published Free-plan list. The example profile now explicitly uses listed `t3.small` with an Amazon Linux 2023 x86_64 AMI. It has 2 GiB rather than 4 GiB: image publication and deployment need capacity testing (Java builds and application scans run on GitHub-hosted runners); do not assume performance equivalence. Check the account's EC2/EBS limits. |
 | RDS PostgreSQL 17, `db.t4g.micro`, Single-AZ, 20–30 GiB gp3 | PostgreSQL micro instances are explicitly listed for the Free plan. Confirm PostgreSQL 17/class/storage orderability in the target region and account restrictions on storage/backup settings. Encryption and the RDS-managed master secret also require KMS/Secrets Manager access. |
 | Public ALB, two subnets, HTTPS listener | ALB is explicitly listed for both plans. Supply a validated ACM certificate in this region and your own DNS name; neither is created by this Terraform. Public IPv4 and LCU usage add cost. |
 | ECS cluster, two Fargate tasks, migration/bootstrap tasks | Each task uses 0.5 vCPU and 1 GiB. Credit affordability does not establish Free-plan Fargate access. Confirm that access and the On-Demand vCPU quota before applying. Two steady tasks use 1 vCPU; 200% deployment capacity uses 2 vCPU, plus 0.5 per concurrent migration/bootstrap task. |
@@ -19,7 +21,7 @@ New eligible customers receive $100 at sign-up and can earn another $100; do not
 | S3 state/log buckets and customer-managed KMS key | Require bucket/key permissions, unique bucket names and service availability. Storage, requests, versions and KMS usage can cost money. State bootstrap is independent and protected from ordinary teardown. |
 | ECR | Two private repositories managed by Terraform. Budget for retained image storage, image transfer and NAT processing. Basic scan-on-push is configured; enhanced Inspector scanning is not enabled. Tagged release images require deliberate retention cleanup. Verify account access before apply. |
 | Secrets Manager | Five runtime secrets and the RDS-managed master secret; values must be populated privately. Confirm account access, then budget for secret storage/API calls. |
-| CloudWatch logs + six alarms, SNS email, Budgets | Confirm service access and email subscription. Seven-day log retention bounds retention, not ingestion cost. The existing account-wide $100 monthly budget alerts at $50 actual and $80 forecast; it is not a hard cap or a remaining-credit monitor. |
+| CloudWatch logs + six alarms, SNS email, Budgets | Confirm service access and email subscription. Seven-day log retention bounds retention, not ingestion cost. The Terraform-defined account-wide $100 monthly budget alerts at $50 actual and $80 forecast; it is not a hard cap or a remaining-credit monitor. |
 | External telemetry and DNS | Not provisioned by this Terraform and not paid for by AWS credits. Replace all example endpoints, publish tested immutable images and configure native machine authentication. Alloy must pass the publication scan before deployment. |
 
 AWS sources: [eligible EC2 sizes and ALB](https://aws.amazon.com/free/compute/), [RDS Free plan](https://aws.amazon.com/rds/free/), [ALB pricing](https://aws.amazon.com/elasticloadbalancing/pricing/), [Fargate pricing](https://aws.amazon.com/fargate/pricing/), [VPC pricing](https://aws.amazon.com/vpc/pricing/). Items marked for confirmation are unresolved account checks, not a claim that the service is excluded.
